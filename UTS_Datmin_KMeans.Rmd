@@ -1,0 +1,91 @@
+---
+title: "dmkm_uts"
+author: "Salwa Rizqina Putri"
+date: "10/27/2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#LOAD DATASET
+```{r}
+library(readxl)
+dataset_uts <- read_excel("c://hp/data.xlsx")
+dataset<-dataset_uts
+head(dataset)
+```
+#LIHAT DESKRIPSI DATA
+```{r}
+summary(dataset)
+```
+
+#CARI MISSING VALUE
+```{r}
+dataset$Budget[is.na(dataset$Budget)] <- mean(dataset$Budget, na.rm = TRUE)
+dataset$Screens[is.na(dataset$Screens)] <- mean(dataset$Screens, na.rm = TRUE)
+dataset$AF[is.na(dataset$AF)] <- mean(dataset$AF, na.rm = TRUE)
+summary(dataset)
+which(is.na(dataset))
+```
+
+#UBAH TIPE DATA YANG FAKTOR
+```{r}
+dataset_new$Genre<-as.factor(dataset_new$Genre)
+dataset_new$Sequel<-as.factor(dataset_new$Sequel)
+```
+
+#BUAT KELAS
+```{r}
+dataset_new$class<-cut(dataset_new$Ratings, 3, labels = c("Rendah", "Sedang", "Tinggi"))
+dataset<-dataset_new
+dataset$class<-as.factor(dataset$class)
+```
+
+#SPLIT DATA
+```{r}
+set.seed(123)
+training_set <- sample(1:nrow(dataset), floor(.80 * nrow(dataset)))
+testing_set <- (1:nrow(dataset))[1:nrow(dataset) %in% training_set == FALSE]
+train <- dataset[training_set,]
+test <- dataset[testing_set,]
+```
+
+#TRAIN MODEL
+```{r}
+library(class)
+prediksi <- knn(train[-c(1,2,3,15)],test[-c(1,2,3,15)], cl=train$class, k=20)
+```
+#CONF. MATRIX
+```{r}
+library(caret)
+confusionMatrix(table(prediksi, test$class))
+library(mltest)
+a<-ml_test(prediksi, test$class, output.as.table = TRUE)
+a$precision
+a$recall
+```
+#MENCARI NILAI K TERBAIK
+```{r}
+for(i in 1:40){
+  prediksiknn <- knn(train[-c(1,2,3,15)],test[-c(1,2,3,15)], cl=train$class, k=i)
+  akurasi <- 100*sum(test$class==prediksiknn)/nrow(test)
+  cat("K = ", i," akurasinya ",akurasi, '%', '\n')
+}
+```
+Optimum : K=7
+
+#TRAIN MODEL
+```{r}
+prediksi2 <- knn(train[-c(1,2,3,15)],test[-c(1,2,3,15)], cl=train$class, k=7)
+```
+#CONF. MATRIX
+```{r}
+library(caret)
+confusionMatrix(table(prediksi2, test$class))
+library(mltest)
+ml_test(prediksi2, test$class, output.as.table = TRUE)
+```
